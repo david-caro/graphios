@@ -7,6 +7,7 @@
 # Juan Jose Presa <juanjop@gmail.com>
 # Ranjib Dey <dey.ranjib@gmail.com>
 # Ryan Davis <https://github.com/ryepup>
+# David Caro <david.caro.estevez@gmail.com> <https://github.com/david.caro>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -89,6 +90,8 @@ sock = socket.socket()
 log = logging.getLogger('log')
 
 
+class PerfLineFormatError(Exception): pass
+
 def configure(opts):
     global spool_directory
 
@@ -126,12 +129,16 @@ def send_carbon(carbon_list):
     """
         Sends a list to Carbon, we postpend every entry with a \n as per
         carbon documentation.
-        If we can't connect to carbin, it sleeps, and doubles sleep_time
+        If we can't connect to carbon, it sleeps, and doubles sleep_time
         until it hits sleep_max.
     """
     global sock
     global sleep_time
-    message = convert_pickle(carbon_list)
+    try:
+        message = convert_pickle(carbon_list)
+    except PerfLineFormatError, e:
+        log.error('%s' % e)
+        return False
     #message = '\n'.join(carbon_list) + '\n'
     try:
         sock.sendall(message)
@@ -163,10 +170,17 @@ def convert_pickle(carbon_list):
     """
     pickle_list = []
     for metric in carbon_list:
-        path, value, timestamp = re.split("\s+", metric.strip())
+        try:
+            path, value, timestamp = re.split("\s+", metric.strip())
+        except ValueError, e:
+            res = re.split("\s+", metric.strip())
+            if len(res) != 2:
+                raise PerfLineFormatError("Error reading line %s:\n%s" % (metric, e))
+            path, timestamp = res
+            value = 0
+            log.warning("Error reading line %s, setting value to 0 by default." % metric)
         metric_tuple = (path, (timestamp, value))
         pickle_list.append(metric_tuple)
-
     payload = pickle.dumps(pickle_list)
     header = struct.pack("!L", len(payload))
     message = header + payload

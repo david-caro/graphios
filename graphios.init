@@ -9,33 +9,34 @@
 # File : graphios
 
 # Source function library.
-. /etc/init.d/functions
+[[ -f /etc/init.d/functions ]] && . /etc/init.d/functions
+[[ -f /lib/lsb/init-functions ]] && . /lib/lsb/init-functions
 
 # Source networking configuration.
-. /etc/sysconfig/network
+[[ -f /etc/init.d/functions ]] && . /etc/sysconfig/network
 
 # Check that networking is up.
 [ "$NETWORKING" = "no" ] && exit 0
 
-prog="/opt/nagios/bin/graphios.py"
+prog="/usr/share/nagios3/graphios/graphios.py"
 # or use the command line options:
 #prog="/opt/nagios/bin/graphios.py --log-file=/dir/mylog.log --spool-directory=/dir/my/sool"
 GRAPHIOS_USER="nagios"
 RETVAL=0
 
 start () {
-        echo -n "Starting $prog"
-        /usr/bin/sudo -u $GRAPHIOS_USER  "$prog" &
+        echo -n "Starting $prog: "
+        env SHELL=/bin/sh /usr/bin/sudo -s -u $GRAPHIOS_USER  "$prog" &
         RETVAL=$?
-        [ $RETVAL -eq 0 ] && success || failure
+        [ $RETVAL -eq 0 ] && echo "OK" || echo "ERROR"
         echo
 }
 
 stop () {
-        echo -n "Stopping $prog"
+        echo -n "Stopping $prog: "
         killproc graphios.py
         RETVAL=$?
-        [ $RETVAL -eq 0 ] && success || failure
+        [ $RETVAL -eq 0 ] && echo "OK" || echo "ERROR"
         echo
 }
 
@@ -57,7 +58,7 @@ case "$1" in
         restart
         ;;
   status)
-        status $prog
+        status "$prog"
         RETVAL=$?
         ;;
   *)

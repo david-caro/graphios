@@ -55,10 +55,10 @@ carbon_port = 2004
 spool_directory = '/var/spool/nagios/graphios'
 
 # graphios log info
-log_file = '/var/log/nagios/graphios.log'
+log_file = '/var/log/nagios3/graphios.log'
 log_max_size = 25165824         # 24 MB
-log_level = logging.INFO
-#log_level = logging.DEBUG      # DEBUG is quite verbose
+#log_level = logging.INFO
+log_level = logging.DEBUG      # DEBUG is quite verbose
 
 # How long to sleep between processing the spool directory
 sleep_time = 15
